@@ -109,3 +109,12 @@ Using port forwarding, we can open browser and see it do something useful. 'depl
 - kubectl apply -f nginx-deploy.yaml (in deploy folder)
 - kubectl apply -f app-service.yaml
 - kubectl apply -f app-deploy.yaml
+
+# Pipelines! Build and Deploy
+
+Lets try running concourse in the cluster. See https://github.com/concourse/concourse-chart
+
+    helm repo add concourse https://concourse-charts.storage.googleapis.com/
+    helm install my-release concourse/concourse
+
+Laptop whirring, not starting up.
