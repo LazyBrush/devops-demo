@@ -4,7 +4,7 @@ These are some notes from 'lets play with kubernetes'
 
 # Bootstrap - environment
 
-It can be problematic running terraform, different versions and on different OSes.  E.g. creating certs in terraform uses openssl library, and can be different on OSX to Linux, or that's my experience, for consistency lets use VSCode's devcontainer and always run in linux (container) for issuing terraform and aws commands.
+It can be problematic running terraform, different versions and on different OSes. E.g. creating certs in terraform uses openssl library, and can be different on OSX to Linux, or that's my experience, for consistency lets use VSCode's devcontainer and always run in linux (container) for issuing terraform and aws commands.
 
     See .devcontainer directory, copied from k8s one I made a while ago, updated to add terraform
 
@@ -25,17 +25,17 @@ Kick it all off with:
 
     cd eks; terraform init; terraform apply
 
-Note: Did have to change the versions.tf to allow using a newer version of terraform.  Will see if there are any issues...
+Note: Did have to change the versions.tf to allow using a newer version of terraform. Will see if there are any issues...
 
-Note: Also at this point, in the AWS console to see things being created.  Will want to check later when we kill everything that all resources are removed.  We do trust terraform, mostly.
+Note: Also at this point, in the AWS console to see things being created. Will want to check later when we kill everything that all resources are removed. We do trust terraform, mostly.
 
-Note: Hmm, cluster made in Ohio, nice.  Will update REGION later, preference is for London. (variables.tf)
+Note: Hmm, cluster made in Ohio, nice. Will update REGION later, preference is for London. (variables.tf)
 
 # Get context
 
     aws eks update-kubeconfig --name education-eks-xxxxx --region=us-east-2
 
-Note: next time, I'll set my preferred region and cluster name will vary.  After setting context can then:
+Note: next time, I'll set my preferred region and cluster name will vary. After setting context can then:
 
     kubectl get pods
 
@@ -46,7 +46,7 @@ After 30 mins, we get an error, timing out on EKS node group creation...
 Got the error:
 
     Error: error waiting for EKS Node Group (education-eks-xxx:node-group-2-xxx) to create: unexpected state 'CREATE_FAILED', wanted target 'ACTIVE'. last error: 1 error occurred:
-     
+
     eks-node-group-2-xxx-xxx-xxx: AsgInstanceLaunchFailures: You've reached your quota for maximum Fleet Requests for this account. Launching EC2 instance failed.
 
 Going to https://us-east-2.console.aws.amazon.com/servicequotas/home/services can see that ASG had limits on targets (perhaps a red herring)
@@ -54,13 +54,15 @@ Going to https://us-east-2.console.aws.amazon.com/servicequotas/home/services ca
 Also, seems others having this issue as recently as 11 days ago asking for update: https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2149
 
 # Attempt #2
+
 Try:
-    o In my home region where I may have increased limits over time
-    o Single node group, single node
 
-Same error.  Seems the defaults for fleet should allow creation, yet it fails.  Submitted request for fleet increase in eu-west-2.  Perhaps my account is old and new defaults have not been applied?
+- In my home region where I may have increased limits over time
+- Single node group, single node
 
-Lets move on with *any* k8s system.
+Same error. Seems the defaults for fleet should allow creation, yet it fails. Submitted request for fleet increase in eu-west-2. Perhaps my account is old and new defaults have not been applied?
+
+Lets move on with _any_ k8s system.
 
 # Minikube
 
@@ -78,4 +80,32 @@ OK, giving up on a vscode dev container for running tools.
 
 At this point we have a cluster to do things with, although not on AWS this should be mostly representative and good enough for testing most things, minus fancy ELBs and Route53 type stuff.
 
+We use Lens to view into the cluster.
 
+# Nginx
+
+Taken from https://github.com/nginxinc/docker-nginx/tree/master/stable/alpine and put in containe-nginx dir
+
+Manually tested with:
+
+    docker build -t demo-nginx .
+    docker run -p 80:80 -it demo-nginx
+
+And then browse to http://localhost:80
+
+# Little more interesting
+
+Simple flask app in container-app which outputs an env var, if set
+
+# Deploy and Config folder
+
+Simple 3 replica deployment for flask app, with the env var set to being the pod name. Nginx pointing at the demo-app service, so we see a different pod name if we refresh in the browser.
+
+# Checkpoint
+
+Using port forwarding, we can open browser and see it do something useful. 'deploy' and 'config' folders added manually with:
+
+- kubectl apply -k . (in config folder)
+- kubectl apply -f nginx-deploy.yaml (in deploy folder)
+- kubectl apply -f app-service.yaml
+- kubectl apply -f app-deploy.yaml
